@@ -179,13 +179,17 @@ class AppController extends ChangeNotifier {
   }
 
   Future<Recording> transcribe(Recording rec) async {
-    if (whisperPath == null) return rec;
+    if (whisperPath == null) {
+      throw const TranscribeUnavailable('whisper-cli is not configured');
+    }
     final modelPath = settings.modelPathOverride ??
         '${Platform.environment['HOME'] ?? ''}/Models/ggml-base.en.bin';
     if (!File(modelPath).existsSync()) {
       problem = SetupProblem.modelNotFound;
-      notifyListeners();
-      return rec;
+      // Defer the notify to the next microtask so listeners that call
+      // setState are not invoked while the caller is still building.
+      scheduleMicrotask(notifyListeners);
+      throw TranscribeUnavailable('Speech model not found at $modelPath');
     }
     final svc = TranscriberService(whisperPath: whisperPath!);
     final result = await svc.transcribe(
@@ -220,4 +224,15 @@ class AppController extends ChangeNotifier {
     _recorder?.dispose();
     super.dispose();
   }
+}
+
+/// Thrown by [AppController.transcribe] when prerequisites for transcription
+/// (whisper-cli binary, model file) are missing. UI catches this to show a
+/// user-facing message instead of crashing.
+class TranscribeUnavailable implements Exception {
+  const TranscribeUnavailable(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
 }

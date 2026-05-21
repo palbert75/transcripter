@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import 'app/app_controller.dart';
@@ -67,7 +68,18 @@ class _RootShellState extends State<_RootShell> {
     super.dispose();
   }
 
-  void _onChanged() => setState(() {});
+  void _onChanged() {
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
+    }
+  }
 
   AppController get c => widget.controller;
 
@@ -226,7 +238,11 @@ class _SessionRouteState extends State<_SessionRoute> {
     super.initState();
     if (!widget.skipTranscribe && _rec.transcript.isEmpty) {
       _transcribing = true;
-      _runTranscription();
+      // Defer to post-frame so transcribe()'s synchronous error paths cannot
+      // call notifyListeners during the build that created this route.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _runTranscription();
+      });
     }
   }
 
@@ -238,6 +254,12 @@ class _SessionRouteState extends State<_SessionRoute> {
         _rec = updated;
         _transcribing = false;
       });
+    } on TranscribeUnavailable catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+      setState(() => _transcribing = false);
     } on Object catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -256,14 +278,66 @@ class _SessionRouteState extends State<_SessionRoute> {
   }
 
   Future<void> _export() async {
-    final txtPath = _rec.wavPath.replaceAll(RegExp(r'\.wav$'), '.txt');
-    await File(txtPath).writeAsString(
-      '${_rec.title}\n\n${_rec.transcript}\n',
+    final choice = await showDialog<_ExportChoice>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Export'),
+        children: <Widget>[
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, _ExportChoice.transcript),
+            child: const Text('Transcript (.txt)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, _ExportChoice.audio),
+            child: const Text('Audio (.wav)'),
+          ),
+        ],
+      ),
     );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exported to $txtPath')),
+    if (choice == null || !mounted) return;
+    try {
+      final outPath = await _writeExport(choice);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved to $outPath')),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export failed: $error')),
+      );
+    }
+  }
+
+  Future<String> _writeExport(_ExportChoice choice) async {
+    final downloads = Directory(
+      '${Platform.environment['HOME'] ?? ''}/Downloads',
     );
+    if (!downloads.existsSync()) {
+      await downloads.create(recursive: true);
+    }
+    final stem = _safeStem(_rec);
+    switch (choice) {
+      case _ExportChoice.transcript:
+        final path = '${downloads.path}/$stem.txt';
+        await File(path).writeAsString(
+          '${_rec.title}\n\n${_rec.transcript}\n',
+        );
+        return path;
+      case _ExportChoice.audio:
+        final source = File(_rec.wavPath);
+        if (!source.existsSync()) {
+          throw const FileSystemException('Original WAV is missing');
+        }
+        final path = '${downloads.path}/$stem.wav';
+        await source.copy(path);
+        return path;
+    }
+  }
+
+  static String _safeStem(Recording r) {
+    final base = r.title.trim().isEmpty ? r.id : r.title.trim();
+    return base.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
   }
 
   Future<void> _delete() async {
@@ -292,3 +366,6 @@ class _SessionRouteState extends State<_SessionRoute> {
     );
   }
 }
+
+enum _ExportChoice { transcript, audio }
+
