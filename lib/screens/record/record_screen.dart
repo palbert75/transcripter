@@ -70,7 +70,10 @@ class _RecordScreenState extends State<RecordScreen> {
   Widget build(BuildContext context) {
     final isRecording = widget.state == RecorderState.recording ||
         widget.state == RecorderState.stopping;
-    final blocked = widget.problem != null;
+    // Only true for problems that prevent capture (no ffmpeg, no mic
+    // permission). Missing whisper or model still shows the banner but
+    // leaves recording enabled.
+    final blocked = widget.problem?.blocksRecording ?? false;
 
     return Scaffold(
       backgroundColor: ColorTokens.cream,

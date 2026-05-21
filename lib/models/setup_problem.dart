@@ -51,4 +51,19 @@ extension SetupProblemCopy on SetupProblem {
         return 'Open System Settings →';
     }
   }
+
+  /// True only for problems that prevent the recorder from starting at all.
+  /// Missing whisper-cli or a model means we can't *transcribe*, but the
+  /// user can still capture audio; only banner them, don't dim the button.
+  bool get blocksRecording {
+    switch (this) {
+      case SetupProblem.ffmpegNotFound:
+      case SetupProblem.microphonePermissionDenied:
+        return true;
+      case SetupProblem.whisperNotFound:
+      case SetupProblem.modelNotFound:
+      case SetupProblem.noSystemAudioDevice:
+        return false;
+    }
+  }
 }

@@ -135,7 +135,8 @@ class AppController extends ChangeNotifier {
   }
 
   Future<Recording?> startRecording() async {
-    if (problem != null || ffmpegPath == null || selectedSource == null) return null;
+    final blocking = problem?.blocksRecording ?? false;
+    if (blocking || ffmpegPath == null || selectedSource == null) return null;
     final id = 'rec_${DateTime.now().millisecondsSinceEpoch}';
     final wavPath = await paths.wavPathFor(id);
     _recorder = RecorderService(ffmpegPath: ffmpegPath!);
