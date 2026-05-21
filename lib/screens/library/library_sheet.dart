@@ -6,21 +6,57 @@ import '../../models/recording.dart';
 import '../../widgets/tonal_icon_button.dart';
 import 'library_row.dart';
 
-class LibrarySheet extends StatelessWidget {
+class LibrarySheet extends StatefulWidget {
   const LibrarySheet({
     required this.recordings,
     required this.onTap,
+    required this.onDelete,
     required this.onClose,
     super.key,
   });
 
   final List<Recording> recordings;
   final void Function(Recording) onTap;
+
+  /// Called when the user confirms deletion. The parent is responsible for
+  /// actually removing the file (e.g. via `AppController.deleteRecording`).
+  /// The sheet has already removed the row from its local state by then.
+  final Future<void> Function(Recording) onDelete;
   final VoidCallback onClose;
 
   @override
+  State<LibrarySheet> createState() => _LibrarySheetState();
+}
+
+class _LibrarySheetState extends State<LibrarySheet> {
+  late List<Recording> _recordings = List<Recording>.of(widget.recordings);
+
+  @override
+  void didUpdateWidget(covariant LibrarySheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the parent re-pushes the sheet with a different list, follow it.
+    if (!identical(oldWidget.recordings, widget.recordings)) {
+      _recordings = List<Recording>.of(widget.recordings);
+    }
+  }
+
+  Future<void> _handleDelete(Recording rec) async {
+    setState(() => _recordings.removeWhere((r) => r.id == rec.id));
+    try {
+      await widget.onDelete(rec);
+    } on Object catch (error) {
+      if (!mounted) return;
+      // Re-insert and surface the failure so the user knows the file is still there.
+      setState(() => _recordings = List<Recording>.of(widget.recordings));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed: $error')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final groups = _groupByDate(recordings);
+    final groups = _groupByDate(_recordings);
 
     return Scaffold(
       backgroundColor: ColorTokens.cream,
@@ -43,12 +79,13 @@ class LibrarySheet extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  TonalIconButton(icon: Icons.close, onPressed: onClose, tooltip: 'Close'),
+                  TonalIconButton(
+                    icon: Icons.close, onPressed: widget.onClose, tooltip: 'Close'),
                 ],
               ),
             ),
             Expanded(
-              child: recordings.isEmpty
+              child: _recordings.isEmpty
                   ? const _EmptyState()
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(
@@ -63,7 +100,11 @@ class LibrarySheet extends StatelessWidget {
                             child: Text(group.label, style: AppTextStyles.meta),
                           ),
                           for (final r in group.items) ...<Widget>[
-                            LibraryRow(recording: r, onTap: () => onTap(r)),
+                            LibraryRow(
+                              recording: r,
+                              onTap: () => widget.onTap(r),
+                              onDelete: () => _handleDelete(r),
+                            ),
                             const SizedBox(height: Spacing.xs),
                           ],
                         ],

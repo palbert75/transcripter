@@ -17,7 +17,7 @@ void main() {
     await server.close(force: true);
   });
 
-  Future<Uri> _serve(Uint8List payload, {int statusCode = 200}) async {
+  Future<Uri> serve(Uint8List payload, {int statusCode = 200}) async {
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((req) async {
       req.response.statusCode = statusCode;
@@ -33,7 +33,7 @@ void main() {
 
   test('downloads to disk and yields cumulative progress', () async {
     final payload = Uint8List.fromList(List<int>.generate(8 * 1024, (i) => i % 256));
-    final url = await _serve(payload);
+    final url = await serve(payload);
     final svc = ModelDownloadService();
     final dest = '${tempDir.path}/model.bin';
 
@@ -56,7 +56,7 @@ void main() {
 
   test('cancellation removes the partial file and throws', () async {
     final payload = Uint8List(8 * 1024 * 1024); // 8 MiB
-    final url = await _serve(payload);
+    final url = await serve(payload);
     final svc = ModelDownloadService();
     final dest = '${tempDir.path}/cancelled.bin';
     final token = CancelToken();
@@ -83,7 +83,7 @@ void main() {
   });
 
   test('throws when the server returns a non-200 status', () async {
-    final url = await _serve(Uint8List(0), statusCode: 404);
+    final url = await serve(Uint8List(0), statusCode: 404);
     final svc = ModelDownloadService();
     final dest = '${tempDir.path}/missing.bin';
 

@@ -147,6 +147,7 @@ class _RootShellState extends State<_RootShell> {
           child: LibrarySheet(
             recordings: recs,
             onClose: () => Navigator.pop(context),
+            onDelete: (rec) => c.deleteRecording(rec),
             onTap: (rec) async {
               Navigator.pop(context);
               await Navigator.of(context).push(MaterialPageRoute<void>(
