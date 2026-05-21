@@ -14,6 +14,7 @@ import '../services/paths_service.dart';
 import '../services/recorder_service.dart';
 import '../services/settings_service.dart';
 import '../services/transcriber_service.dart';
+import '../services/wav_signal_check.dart';
 
 /// One-stop owner of background services and reactive state.
 /// Widgets subscribe via `addListener`.
@@ -157,12 +158,21 @@ class AppController extends ChangeNotifier {
     return _activeRecording;
   }
 
+  /// Peak amplitude (0..32767) of the most recent recording, or null if not
+  /// yet measured. Below [WavSignalReport.silentThreshold] indicates a
+  /// silent capture (likely a routing/permission problem).
+  int? lastRecordingPeak;
+
+  /// Last ffmpeg stderr (truncated) from the most recent recording.
+  String lastRecorderStderr = '';
+
   Future<Recording?> stopRecording() async {
     final rec = _recorder;
     final pending = _activeRecording;
     if (rec == null || pending == null) return null;
     final dur = rec.elapsed();
     await rec.stop();
+    lastRecorderStderr = rec.stderrLog;
     _clock?.cancel();
     await _stateSub?.cancel();
     _stateSub = null;
@@ -173,6 +183,10 @@ class AppController extends ChangeNotifier {
     final completed = pending.copyWith(durationSeconds: dur.inSeconds);
     await library.save(completed);
     await _refreshLibraryCount();
+
+    final report = await inspectWav(completed.wavPath);
+    lastRecordingPeak = report?.maxAbs;
+
     notifyListeners();
     _activeRecording = null;
     return completed;

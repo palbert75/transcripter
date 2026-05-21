@@ -102,12 +102,33 @@ class _RootShellState extends State<_RootShell> {
   Future<void> _stop() async {
     final completed = await c.stopRecording();
     if (completed == null || !mounted) return;
+    _maybeWarnSilent();
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => _SessionRoute(
           controller: c,
           initial: completed,
         ),
+      ),
+    );
+  }
+
+  void _maybeWarnSilent() {
+    final peak = c.lastRecordingPeak;
+    if (peak == null || peak >= 100) return;
+    final usingBlackHole = c.selectedSource?.name
+            .toLowerCase()
+            .contains('blackhole') ??
+        false;
+    final detail = usingBlackHole
+        ? "BlackHole didn't receive any audio. Set macOS Output to a "
+            'Multi-Output Device that includes BlackHole, then try again.'
+        : 'No audio was captured. Check microphone permission for '
+            'Transcripter in System Settings → Privacy & Security.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 8),
+        content: Text('Recording was silent. $detail'),
       ),
     );
   }

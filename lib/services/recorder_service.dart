@@ -25,10 +25,17 @@ class RecorderService {
   RecorderState _state = RecorderState.idle;
   Process? _process;
   DateTime? _startedAt;
+  final StringBuffer _stderrLog = StringBuffer();
+  StreamSubscription<List<int>>? _stderrSub;
+  StreamSubscription<List<int>>? _stdoutSub;
 
   Stream<RecorderState> get state => _stateCtl.stream;
   RecorderState get currentState => _state;
   DateTime? get startedAt => _startedAt;
+
+  /// The last ffmpeg stderr output (capped to the last ~8 KB). Useful for
+  /// surfacing diagnostic messages when a recording is empty or fails.
+  String get stderrLog => _stderrLog.toString();
 
   /// Begins recording. Returns once ffmpeg has been spawned.
   Future<void> start({
@@ -42,6 +49,7 @@ class RecorderService {
     if (!outFile.parent.existsSync()) {
       await outFile.parent.create(recursive: true);
     }
+    _stderrLog.clear();
     final process = await _spawn(ffmpegPath, <String>[
       '-y',
       '-f',
@@ -59,6 +67,20 @@ class RecorderService {
     _process = process;
     _startedAt = DateTime.now();
     _setState(RecorderState.recording);
+
+    // Drain stderr so ffmpeg's diagnostic output is preserved and the pipe
+    // never fills up. Cap to the last ~8 KB.
+    _stderrSub = process.stderr.listen((chunk) {
+      _stderrLog.write(String.fromCharCodes(chunk));
+      if (_stderrLog.length > 8192) {
+        final tail = _stderrLog.toString();
+        _stderrLog
+          ..clear()
+          ..write(tail.substring(tail.length - 8192));
+      }
+    });
+    // Drain stdout too (usually empty for our flags, but don't let it block).
+    _stdoutSub = process.stdout.listen((_) {});
 
     // Detach a watcher so unexpected exits flip us back to idle.
     unawaited(process.exitCode.then((_) {
@@ -89,6 +111,10 @@ class RecorderService {
       }
     }
 
+    await _stderrSub?.cancel();
+    await _stdoutSub?.cancel();
+    _stderrSub = null;
+    _stdoutSub = null;
     _process = null;
     _startedAt = null;
     _setState(RecorderState.idle);
