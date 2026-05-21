@@ -44,7 +44,7 @@ class _WaveformStripState extends State<WaveformStrip>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctl,
-      builder: (_, __) {
+      builder: (context, _) {
         return SizedBox(
           height: widget.height,
           child: Row(

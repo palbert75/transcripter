@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'paths_service.dart';
 
@@ -11,6 +10,14 @@ class AppSettings {
     required this.modelPathOverride,
     required this.preferredSourceName,
   });
+
+  factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
+        language: (json['language'] as String?) ?? defaults.language,
+        ffmpegPathOverride: json['ffmpegPathOverride'] as String?,
+        whisperPathOverride: json['whisperPathOverride'] as String?,
+        modelPathOverride: json['modelPathOverride'] as String?,
+        preferredSourceName: json['preferredSourceName'] as String?,
+      );
 
   final String language;
   final String? ffmpegPathOverride;
@@ -64,14 +71,6 @@ class AppSettings {
         'modelPathOverride': modelPathOverride,
         'preferredSourceName': preferredSourceName,
       };
-
-  factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
-        language: (json['language'] as String?) ?? defaults.language,
-        ffmpegPathOverride: json['ffmpegPathOverride'] as String?,
-        whisperPathOverride: json['whisperPathOverride'] as String?,
-        modelPathOverride: json['modelPathOverride'] as String?,
-        preferredSourceName: json['preferredSourceName'] as String?,
-      );
 }
 
 class SettingsService {
