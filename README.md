@@ -1,8 +1,18 @@
 # Transcripter
 
-Flutter desktop app for recording routed macOS system audio to a transcription-ready WAV file.
+Transcripter is a Flutter macOS desktop app for recording routed system audio
+to a transcription-ready WAV file, then transcribing it locally with
+`whisper.cpp`.
 
-## Current MVP
+## Features
+
+- Record macOS system audio routed through an AVFoundation input device.
+- Save audio as 16 kHz mono PCM WAV for speech transcription.
+- List available AVFoundation audio devices through `ffmpeg`.
+- Run local `whisper.cpp` transcription against a selected model file.
+- Keep recording and transcription output visible in the app log.
+
+## How It Works
 
 The app is intentionally simple:
 
@@ -11,6 +21,15 @@ The app is intentionally simple:
 - `whisper.cpp` transcribes the recorded WAV locally after capture.
 
 This means macOS still needs a virtual audio device for speaker/output capture. The recommended setup is BlackHole 2ch plus a macOS Multi-Output Device that includes both your real speakers/headphones and BlackHole.
+
+## Requirements
+
+- macOS with Flutter desktop support enabled.
+- `ffmpeg`.
+- `whisper.cpp`.
+- BlackHole 2ch or another virtual audio device that exposes system output as
+  an input device.
+- A compatible `whisper.cpp` GGML model file.
 
 ## Local Setup
 
@@ -34,6 +53,8 @@ Then run the app:
 ```sh
 flutter run -d macos
 ```
+
+## Usage
 
 In the app:
 
@@ -60,3 +81,7 @@ The clean open-source path is:
 - Keep BlackHole as a prerequisite first, then evaluate whether a bundled system extension is worth the support and signing burden.
 
 Check all licenses before distribution. FFmpeg can be LGPL or GPL depending on build flags, BlackHole is open source but has driver distribution implications, and Whisper model files have their own license terms.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
