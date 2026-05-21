@@ -188,7 +188,12 @@ class _RootShellState extends State<_RootShell> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => FractionallySizedBox(
+      // ListenableBuilder rebuilds the sheet whenever the controller fires
+      // notifyListeners — picking a new source or a new model is reflected
+      // immediately instead of waiting for the user to close and reopen.
+      builder: (_) => ListenableBuilder(
+        listenable: c,
+        builder: (context, _) => FractionallySizedBox(
         heightFactor: 0.92,
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -204,6 +209,7 @@ class _RootShellState extends State<_RootShell> {
             },
           ),
         ),
+      ),
       ),
     );
   }

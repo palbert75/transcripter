@@ -78,7 +78,9 @@ class _RecordScreenState extends State<RecordScreen> {
         child: Column(
           children: <Widget>[
             _Header(
-              enabled: !isRecording && !blocked,
+              // The header stays interactive even when blocked — Settings
+              // is the user's path out of any SetupProblem.
+              enabled: !isRecording,
               onLibrary: widget.onOpenLibrary,
               onSettings: widget.onOpenSettings,
             ),
