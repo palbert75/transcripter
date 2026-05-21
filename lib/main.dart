@@ -10,6 +10,7 @@ import 'app/theme.dart';
 import 'models/audio_source.dart';
 import 'models/recording.dart';
 import 'models/setup_problem.dart';
+import 'screens/help/blackhole_setup_view.dart';
 import 'screens/library/library_sheet.dart';
 import 'screens/record/record_screen.dart';
 import 'screens/record/source_picker_popover.dart';
@@ -129,8 +130,20 @@ class _RootShellState extends State<_RootShell> {
       SnackBar(
         duration: const Duration(seconds: 8),
         content: Text('Recording was silent. $detail'),
+        action: usingBlackHole
+            ? SnackBarAction(
+                label: 'Setup help',
+                onPressed: _openBlackHoleSetup,
+              )
+            : null,
       ),
     );
+  }
+
+  void _openBlackHoleSetup() {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => BlackHoleSetupView(controller: c),
+    ));
   }
 
   Future<void> _openLibrary() async {
@@ -207,6 +220,11 @@ class _RootShellState extends State<_RootShell> {
             onPickPreferredSource: () {
               unawaited(_pickPreferredFromSettings(context));
             },
+            onOpenBlackHoleSetup: () {
+              Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => BlackHoleSetupView(controller: c),
+              ));
+            },
           ),
         ),
       ),
@@ -215,7 +233,11 @@ class _RootShellState extends State<_RootShell> {
   }
 
   void _handleProblem(SetupProblem problem) {
-    _openSettings();
+    if (problem == SetupProblem.noSystemAudioDevice) {
+      _openBlackHoleSetup();
+    } else {
+      _openSettings();
+    }
   }
 
   @override

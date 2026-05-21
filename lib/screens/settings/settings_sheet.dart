@@ -18,6 +18,7 @@ class SettingsSheet extends StatelessWidget {
     required this.modelsDir,
     required this.onSettingsChanged,
     required this.onPickPreferredSource,
+    required this.onOpenBlackHoleSetup,
     required this.onClose,
     super.key,
   });
@@ -28,6 +29,7 @@ class SettingsSheet extends StatelessWidget {
   final Directory modelsDir;
   final void Function(AppSettings) onSettingsChanged;
   final VoidCallback onPickPreferredSource;
+  final VoidCallback onOpenBlackHoleSetup;
   final VoidCallback onClose;
 
   @override
@@ -67,6 +69,12 @@ class SettingsSheet extends StatelessWidget {
                       subtitle: 'Used when you open the app',
                       value: preferredSource?.name ?? 'Not set',
                       onTap: onPickPreferredSource,
+                    ),
+                    _Row(
+                      title: 'Capture system audio',
+                      subtitle: 'Set up BlackHole + verify routing',
+                      value: 'Guide',
+                      onTap: onOpenBlackHoleSetup,
                     ),
                   ]),
                   const SizedBox(height: Spacing.md),

@@ -237,6 +237,30 @@ class AppController extends ChangeNotifier {
 
   Future<List<Recording>> listRecordings() => library.list();
 
+  /// Records [duration] from [source] into a throwaway temp WAV and returns
+  /// a [WavSignalReport] describing whether any audio actually came in.
+  /// Used by the BlackHole setup helper so the user can verify routing
+  /// without committing a "real" recording. Returns null if ffmpeg is not
+  /// available or a recording is already in progress.
+  Future<WavSignalReport?> testRoutingFor(
+    AudioSource source, {
+    Duration duration = const Duration(seconds: 3),
+  }) async {
+    if (ffmpegPath == null) return null;
+    if (_recorder != null) return null;
+    final outPath =
+        '${Directory.systemTemp.path}/transcripter_routing_test.wav';
+    final probe = RecorderService(ffmpegPath: ffmpegPath!);
+    try {
+      await probe.start(source: source, outputWavPath: outPath);
+      await Future<void>.delayed(duration);
+      await probe.stop();
+    } finally {
+      probe.dispose();
+    }
+    return inspectWav(outPath);
+  }
+
   @override
   void dispose() {
     _stateSub?.cancel();
