@@ -32,6 +32,11 @@ class AppController extends ChangeNotifier {
   AppSettings settings = AppSettings.defaults;
   String? ffmpegPath;
   String? whisperPath;
+
+  /// Directory where downloaded Whisper models live. ~/Models on macOS.
+  /// Created on demand by the downloader.
+  Directory get modelsDir =>
+      Directory('${Platform.environment['HOME'] ?? ''}/Models');
   List<AudioSource> sources = const <AudioSource>[];
   AudioSource? selectedSource;
   RecorderState recorderState = RecorderState.idle;

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../app/spacing.dart';
@@ -6,12 +8,14 @@ import '../../models/audio_source.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/tonal_icon_button.dart';
 import 'advanced_settings_view.dart';
+import 'models_view.dart';
 
 class SettingsSheet extends StatelessWidget {
   const SettingsSheet({
     required this.settings,
     required this.preferredSource,
     required this.allSources,
+    required this.modelsDir,
     required this.onSettingsChanged,
     required this.onPickPreferredSource,
     required this.onClose,
@@ -21,6 +25,7 @@ class SettingsSheet extends StatelessWidget {
   final AppSettings settings;
   final AudioSource? preferredSource;
   final List<AudioSource> allSources;
+  final Directory modelsDir;
   final void Function(AppSettings) onSettingsChanged;
   final VoidCallback onPickPreferredSource;
   final VoidCallback onClose;
@@ -67,6 +72,28 @@ class SettingsSheet extends StatelessWidget {
                   const SizedBox(height: Spacing.md),
                   _Group(title: 'Transcription', rows: <Widget>[
                     _Row(
+                      title: 'Speech model',
+                      subtitle: 'Download and pick the Whisper model',
+                      value: _modelLabel(settings.modelPathOverride),
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => ModelsView(
+                          modelsDir: modelsDir,
+                          activePath: settings.modelPathOverride,
+                          onModelSelected: (path) {
+                            if (path == null) {
+                              onSettingsChanged(
+                                settings.copyWith(clearModelOverride: true),
+                              );
+                            } else {
+                              onSettingsChanged(
+                                settings.copyWith(modelPathOverride: path),
+                              );
+                            }
+                          },
+                        ),
+                      )),
+                    ),
+                    _Row(
                       title: 'Language',
                       value: settings.language,
                       onTap: () => _editLanguage(context, settings, onSettingsChanged),
@@ -94,6 +121,12 @@ class SettingsSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static String _modelLabel(String? overridePath) {
+    if (overridePath == null || overridePath.isEmpty) return 'Auto';
+    final slash = overridePath.lastIndexOf('/');
+    return slash >= 0 ? overridePath.substring(slash + 1) : overridePath;
   }
 
   Future<void> _editLanguage(

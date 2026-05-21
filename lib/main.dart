@@ -195,6 +195,7 @@ class _RootShellState extends State<_RootShell> {
             settings: c.settings,
             preferredSource: c.selectedSource,
             allSources: c.sources,
+            modelsDir: c.modelsDir,
             onClose: () => Navigator.pop(context),
             onSettingsChanged: (s) => c.changeSettings(s),
             onPickPreferredSource: () {
