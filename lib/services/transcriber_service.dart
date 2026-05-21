@@ -60,18 +60,26 @@ class TranscriberService {
     );
   }
 
-  /// whisper-cli (without `-otxt`) prints lines like
-  ///   `[00:00.000 --> 00:03.000]  Hello.`
-  /// Strip the timestamps and join into prose.
+  /// whisper-cli prints lines like
+  ///   `[00:00.000 --> 00:03.000]  Hello.`               (older versions)
+  ///   `[00:00:00.000 --> 00:00:03.320]  Hello.`          (1.8.x and later)
+  /// Strip the timestamps and join into prose. Blank-audio markers like
+  /// `[BLANK_AUDIO]` or `[SILENCE]` are dropped.
   static String parseTimestampedOutput(String raw) {
-    final lineRe = RegExp(r'^\[\d{2}:\d{2}\.\d{3}\s+-->\s+\d{2}:\d{2}\.\d{3}\]\s*(.*)$');
+    final lineRe = RegExp(
+      r'^\[(?:\d{2}:)?\d{2}:\d{2}\.\d{3}\s+-->\s+(?:\d{2}:)?\d{2}:\d{2}\.\d{3}\]\s*(.*)$',
+    );
     final out = <String>[];
     for (final line in raw.split('\n')) {
       final m = lineRe.firstMatch(line.trim());
-      if (m != null) {
-        final segment = m.group(1)!.trim();
-        if (segment.isNotEmpty) out.add(segment);
-      }
+      if (m == null) continue;
+      var segment = m.group(1)!.trim();
+      if (segment.isEmpty) continue;
+      // whisper emits `[BLANK_AUDIO]`, `[SILENCE]`, `[MUSIC]` etc. on
+      // segments with no speech. Suppress them so the transcript reads
+      // cleanly.
+      if (RegExp(r'^\[[A-Z_ ]+\]$').hasMatch(segment)) continue;
+      out.add(segment);
     }
     return out.join(' ');
   }

@@ -48,4 +48,22 @@ void main() {
     final plain = TranscriberService.parseTimestampedOutput(raw);
     expect(plain, 'Hello world. This is a second sentence.');
   });
+
+  test('parseTimestampedOutput handles whisper 1.8.x HH:MM:SS format', () {
+    const raw =
+        'load_backend: loaded BLAS backend from somewhere\n'
+        '[00:00:00.000 --> 00:00:03.320]   Hello, this is a test.\n'
+        '[00:00:03.320 --> 00:00:05.000]   Another line.\n';
+    final plain = TranscriberService.parseTimestampedOutput(raw);
+    expect(plain, 'Hello, this is a test. Another line.');
+  });
+
+  test('parseTimestampedOutput drops [BLANK_AUDIO] segments', () {
+    const raw =
+        '[00:00:00.000 --> 00:00:03.000]   [BLANK_AUDIO]\n'
+        '[00:00:03.000 --> 00:00:05.000]   Real words here.\n'
+        '[00:00:05.000 --> 00:00:08.000]   [MUSIC]\n';
+    final plain = TranscriberService.parseTimestampedOutput(raw);
+    expect(plain, 'Real words here.');
+  });
 }
