@@ -23,4 +23,12 @@ void main() {
     final multi = ModelCatalog.all.firstWhere((m) => m.id == 'base');
     expect(multi.multilingual, isTrue);
   });
+
+  test('catalog includes large-v3 and medium multilingual options', () {
+    final ids = ModelCatalog.all.map((m) => m.id).toSet();
+    expect(ids, containsAll(<String>['medium', 'large-v3']));
+    final large = ModelCatalog.all.firstWhere((m) => m.id == 'large-v3');
+    expect(large.multilingual, isTrue);
+    expect(large.description, contains('99 languages'));
+  });
 }

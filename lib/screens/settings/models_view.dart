@@ -256,6 +256,17 @@ class _ModelRow extends StatelessWidget {
                         color: ColorTokens.inkSoft,
                       ),
                     ),
+                    if (model.description != null) ...<Widget>[
+                      const SizedBox(height: 4),
+                      Text(
+                        model.description!,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: ColorTokens.inkSoft,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
