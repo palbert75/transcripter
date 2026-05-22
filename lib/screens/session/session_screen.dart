@@ -33,8 +33,9 @@ class SessionScreen extends StatefulWidget {
 }
 
 class _SessionScreenState extends State<SessionScreen> {
-  late final TextEditingController _titleCtl =
-      TextEditingController(text: widget.recording.title);
+  late final TextEditingController _titleCtl = TextEditingController(
+    text: widget.recording.title,
+  );
   final FocusNode _titleFocus = FocusNode();
 
   @override
@@ -63,15 +64,25 @@ class _SessionScreenState extends State<SessionScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            _Header(onBack: widget.onBack),
+            _Header(
+              onBack: widget.onBack,
+              onExport: widget.onExport,
+              onCopy: widget.onCopy,
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  Spacing.md, 0, Spacing.md, Spacing.md,
+                  Spacing.md,
+                  0,
+                  Spacing.md,
+                  Spacing.md,
                 ),
                 child: SoftCard(
                   padding: const EdgeInsets.fromLTRB(
-                    Spacing.xl, Spacing.lg, Spacing.xl, Spacing.lg,
+                    Spacing.xl,
+                    Spacing.lg,
+                    Spacing.xl,
+                    Spacing.lg,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,13 +143,25 @@ class _SessionScreenState extends State<SessionScreen> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.onBack});
+  const _Header({
+    required this.onBack,
+    required this.onExport,
+    required this.onCopy,
+  });
+
   final VoidCallback onBack;
+  final VoidCallback onExport;
+  final VoidCallback onCopy;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.md, Spacing.md, Spacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        Spacing.md,
+        Spacing.md,
+        Spacing.md,
+        Spacing.sm,
+      ),
       child: Row(
         children: <Widget>[
           InkWell(
@@ -152,9 +175,21 @@ class _Header extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          TonalIconButton(icon: Icons.download_outlined, onPressed: () {}, tooltip: 'Export'),
-          TonalIconButton(icon: Icons.copy_outlined, onPressed: () {}, tooltip: 'Copy'),
-          TonalIconButton(icon: Icons.more_horiz, onPressed: () {}, tooltip: 'More'),
+          TonalIconButton(
+            icon: Icons.download_outlined,
+            onPressed: onExport,
+            tooltip: 'Export',
+          ),
+          TonalIconButton(
+            icon: Icons.copy_outlined,
+            onPressed: onCopy,
+            tooltip: 'Copy',
+          ),
+          TonalIconButton(
+            icon: Icons.more_horiz,
+            onPressed: () {},
+            tooltip: 'More',
+          ),
         ],
       ),
     );
@@ -165,10 +200,14 @@ String _metaLine(Recording r) {
   String two(int n) => n.toString().padLeft(2, '0');
   final d = r.createdAt.toLocal();
   final today = DateTime.now();
-  final isToday = d.year == today.year && d.month == today.month && d.day == today.day;
-  final datePart = isToday ? 'TODAY' : '${two(d.year)}-${two(d.month)}-${two(d.day)}';
+  final isToday =
+      d.year == today.year && d.month == today.month && d.day == today.day;
+  final datePart = isToday
+      ? 'TODAY'
+      : '${two(d.year)}-${two(d.month)}-${two(d.day)}';
   final timePart = '${two(d.hour)}:${two(d.minute)}';
   final durM = r.durationSeconds ~/ 60;
   final durS = r.durationSeconds % 60;
-  return '$datePart · $timePart · ${two(durM)}:${two(durS)} · ${r.sourceName}'.toUpperCase();
+  return '$datePart · $timePart · ${two(durM)}:${two(durS)} · ${r.sourceName}'
+      .toUpperCase();
 }

@@ -52,10 +52,8 @@ class LibraryRow extends StatelessWidget {
                   _formatDuration(recording.durationSeconds),
                   style: AppTextStyles.mono,
                 ),
-                const SizedBox(width: 4),
-                _MoreMenu(
-                  onDelete: () => _confirmAndDelete(context),
-                ),
+                const SizedBox(width: Spacing.xs),
+                _DeleteButton(onPressed: () => _confirmAndDelete(context)),
               ],
             ),
             const SizedBox(height: 2),
@@ -123,33 +121,35 @@ class LibraryRow extends StatelessWidget {
   }
 }
 
-class _MoreMenu extends StatelessWidget {
-  const _MoreMenu({required this.onDelete});
+class _DeleteButton extends StatelessWidget {
+  const _DeleteButton({required this.onPressed});
 
-  final VoidCallback onDelete;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      tooltip: 'More',
-      iconSize: 16,
-      padding: EdgeInsets.zero,
-      icon: const Icon(Icons.more_horiz, color: ColorTokens.inkSoft),
-      onSelected: (value) {
-        if (value == 'delete') onDelete();
-      },
-      itemBuilder: (_) => const <PopupMenuEntry<String>>[
-        PopupMenuItem<String>(
-          value: 'delete',
-          child: Row(
-            children: <Widget>[
-              Icon(Icons.delete_outline, size: 16, color: ColorTokens.danger),
-              SizedBox(width: 8),
-              Text('Delete', style: TextStyle(color: ColorTokens.danger)),
-            ],
+    return Tooltip(
+      message: 'Delete recording',
+      child: SizedBox(
+        width: 28,
+        height: 28,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(Radii.sm),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(Radii.sm),
+            hoverColor: ColorTokens.danger.withValues(alpha: 0.08),
+            onTap: onPressed,
+            child: const Center(
+              child: Icon(
+                Icons.delete_outline,
+                size: 16,
+                color: ColorTokens.danger,
+              ),
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }

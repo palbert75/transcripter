@@ -29,20 +29,18 @@ class RecordScreen extends StatefulWidget {
   });
 
   /// Convenience constructor for widget tests and previews.
-  const RecordScreen.preview({
-    required this.source,
-    super.key,
-  })  : allSources = const <AudioSource>[],
-        state = RecorderState.idle,
-        elapsed = Duration.zero,
-        problem = null,
-        recordingsCount = 0,
-        onStart = _noop,
-        onStop = _noop,
-        onPickSource = _noopPick,
-        onOpenLibrary = _noop,
-        onOpenSettings = _noop,
-        onResolveProblem = _noopProblem;
+  const RecordScreen.preview({required this.source, super.key})
+    : allSources = const <AudioSource>[],
+      state = RecorderState.idle,
+      elapsed = Duration.zero,
+      problem = null,
+      recordingsCount = 0,
+      onStart = _noop,
+      onStop = _noop,
+      onPickSource = _noopPick,
+      onOpenLibrary = _noop,
+      onOpenSettings = _noop,
+      onResolveProblem = _noopProblem;
 
   final AudioSource source;
   final List<AudioSource> allSources;
@@ -68,7 +66,8 @@ class RecordScreen extends StatefulWidget {
 class _RecordScreenState extends State<RecordScreen> {
   @override
   Widget build(BuildContext context) {
-    final isRecording = widget.state == RecorderState.recording ||
+    final isRecording =
+        widget.state == RecorderState.recording ||
         widget.state == RecorderState.stopping;
     // Only true for problems that prevent capture (no ffmpeg, no mic
     // permission). Missing whisper or model still shows the banner but
@@ -134,10 +133,19 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.md, Spacing.md, Spacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        Spacing.lg,
+        Spacing.md,
+        Spacing.md,
+        Spacing.sm,
+      ),
       child: Row(
         children: <Widget>[
-          const Icon(Icons.fiber_manual_record, size: 8, color: ColorTokens.accent),
+          const Icon(
+            Icons.fiber_manual_record,
+            size: 8,
+            color: ColorTokens.accent,
+          ),
           const SizedBox(width: 6),
           const Text(
             'Transcripter',
@@ -186,38 +194,50 @@ class _Center extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timer = _formatDuration(elapsed);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Builder(
-            builder: (anchorCtx) => SourcePill(
-              source: source,
-              enabled: sourceEnabled,
-              onTap: () => onPickSource(anchorCtx),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Builder(
+                    builder: (anchorCtx) => SourcePill(
+                      source: source,
+                      enabled: sourceEnabled,
+                      onTap: () => onPickSource(anchorCtx),
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.lg),
+                  RecordButton(isRecording: isRecording, onTap: onTapRecord),
+                  const SizedBox(height: Spacing.lg),
+                  Text(
+                    timer,
+                    style: isRecording
+                        ? AppTextStyles.timer
+                        : AppTextStyles.timer.copyWith(
+                            color: ColorTokens.inkFaint,
+                          ),
+                  ),
+                  const SizedBox(height: Spacing.sm),
+                  if (isRecording)
+                    const WaveformStrip()
+                  else
+                    const Text(
+                      'Tap to record',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: ColorTokens.inkSoft,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: Spacing.lg),
-          RecordButton(
-            isRecording: isRecording,
-            onTap: onTapRecord,
-          ),
-          const SizedBox(height: Spacing.lg),
-          Text(
-            timer,
-            style: isRecording
-                ? AppTextStyles.timer
-                : AppTextStyles.timer.copyWith(color: ColorTokens.inkFaint),
-          ),
-          const SizedBox(height: Spacing.sm),
-          if (isRecording)
-            const WaveformStrip()
-          else
-            const Text(
-              'Tap to record',
-              style: TextStyle(fontSize: 11, color: ColorTokens.inkSoft),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -237,15 +257,20 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final left = isRecording
-        ? const Text('● Recording · 16 kHz mono',
-            style: TextStyle(fontSize: 11, color: ColorTokens.inkSoft))
+        ? const Text(
+            '● Recording · 16 kHz mono',
+            style: TextStyle(fontSize: 11, color: ColorTokens.inkSoft),
+          )
         : Text(
             '$recordingsCount recent recording${recordingsCount == 1 ? '' : 's'}',
             style: const TextStyle(fontSize: 11, color: ColorTokens.inkSoft),
           );
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.lg, vertical: Spacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.lg,
+        vertical: Spacing.md,
+      ),
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: ColorTokens.line)),
       ),
